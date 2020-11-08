@@ -42730,11 +42730,19 @@ var TypeDocumentation = /*#__PURE__*/function (_Component) {
     });
 
     _defineProperty(_assertThisInitialized(_this), "selectDocVersion", function (version) {
-      if (version.isLatest) {
-        window.location.pathname = '/docs/';
-      } else {
-        window.location.pathname = "/docs/".concat(version.docName, "/");
+      var currentVersion = (0, _global.default)().Immutable.version; // determine path when deployed in a sub folder of the domain
+
+      var path = window.location.pathname.substring(0, window.location.pathname.indexOf('/docs/') + 5);
+
+      if (currentVersion === version) {
+        return;
       }
+
+      if (!version.isLatest) {
+        path = "".concat(path, "/").concat(version.docName, "/");
+      }
+
+      window.location.pathname = path;
     });
 
     _this.state = {
