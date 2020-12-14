@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-describe('List', function () {
+describe('List', function (Immutable) {
   describe('builds from array', function () {
     var array2 = [];
     for (var ii = 0; ii < 2; ii++) {

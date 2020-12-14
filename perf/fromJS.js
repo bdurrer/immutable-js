@@ -5,15 +5,55 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-describe('fromJS', () => {
+describe('fromJS', (Immutable) => {
   const list = Immutable.List();
   it('List', () => {
     Immutable.fromJS(list);
   });
 
-  const object = { foo: 'bar' };
-  it('object', () => {
-    Immutable.fromJS(object);
+  const map = Immutable.Map({ key: 'value' });
+  it('Map', () => {
+    Immutable.fromJS(map);
+  });
+
+  describe('object', () => {
+    const object = {foo: 'bar'};
+    it('simple', () => {
+      Immutable.fromJS(object);
+    });
+
+    const biggerObject = {
+      val1: {
+        val1: { ...object },
+        val2: { ...object },
+        val3: { ...object },
+      },
+      val2: {
+        val1: { ...object },
+        val2: { ...object },
+        val3: { ...object },
+      },
+      val3: {
+        val1: { ...object },
+        val2: { ...object },
+        val3: { ...object },
+      },
+      val4: {
+        val1: { ...object },
+        val2: { ...object },
+        val3: { ...object },
+      },
+      val5: {
+        val1: { ...object },
+        val2: { ...object },
+        val3: { ...object },
+      },
+    }
+
+    it('big', () => {
+      Immutable.fromJS(biggerObject);
+    });
+
   });
 
   describe('array of Lists', () => {

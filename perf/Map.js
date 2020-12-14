@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-describe('Map', function () {
+describe('Map', function (Immutable) {
   describe('builds from an object', function () {
     var obj2 = {};
     for (var ii = 0; ii < 2; ii++) {

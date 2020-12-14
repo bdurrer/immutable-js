@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-describe('Record', () => {
+describe('Record', (Immutable) => {
   describe('builds from an object', () => {
     [2, 5, 10, 100, 1000].forEach((size) => {
       var defaults = {};

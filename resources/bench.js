@@ -31,6 +31,54 @@ var readFile = promisify(fs.readFile);
 
 var perfDir = path.resolve(__dirname, '../perf/');
 
+
+context = {
+  contexts:[],
+  currentSrc: undefined,
+  suites: {},
+  description: [],
+  beforeStack: [],
+  beforeFn: undefined,
+  prevBeforeFn: undefined
+}
+
+describe = function(name, fn) {
+  context.description.push(name);
+  context.beforeStack.push(context.prevBeforeFn);
+  context.prevBeforeFn = context.beforeFn;
+  fn(context.currentSrc);
+  context.beforeFn = context.prevBeforeFn;
+  context.prevBeforeFn = context.beforeStack.pop();
+  context.description.pop();
+}
+
+beforeEach = function(fn) {
+  context.beforeFn = !context.prevBeforeFn
+    ? fn
+    : (function (prevBeforeFn) {
+      return function () {
+        prevBeforeFn();
+        fn();
+      };
+    })(context.prevBeforeFn);
+}
+
+it = function(name, test) {
+  const fullName = context.description.join(' > ') + ' ' + name;
+  if (!context.suites[fullName]) {
+    context.suites[fullName] = {
+      description: fullName,
+      tests: [],
+    }
+  }
+  context.suites[fullName].tests.push({
+    before: context.beforeFn,
+    test: test,
+  });
+}
+
+
+
 Promise.all([
   readFile(path.resolve(__dirname, '../dist/immutable.js'), {
     encoding: 'utf8',
@@ -42,21 +90,13 @@ Promise.all([
     var oldSrc = args[1].toString({ encoding: 'utf8' }).slice(0, -1); // wtf, comma?
     return newSrc === oldSrc ? [newSrc] : [newSrc, oldSrc];
   })
-  .then(function (sources) {
-    return sources.map(function (source) {
-      var sourceExports = {};
-      var sourceModule = { exports: sourceExports };
-      vm.runInNewContext(
-        source,
-        {
-          require: require,
-          module: sourceModule,
-          exports: sourceExports,
-        },
-        'immutable.js'
-      );
-      return sourceModule.exports;
-    });
+  .then(function (modules) {
+    modules.forEach(function(src) {
+      new Function(src)();
+      context.contexts.push(global.Immutable);
+    })
+    global.Immutable = undefined;
+    return modules;
   })
   .then(function (modules) {
     return readdir(perfDir)
@@ -75,63 +115,22 @@ Promise.all([
         );
       })
       .then(function (sources) {
-        var tests = {};
+        modules.forEach(function (module, index) {
+          /*
+          new vm.Script(module.src).runInThisContext();
+          const banana = global.Immutable;
+          console.log('version banana');
+          const version = index;
+           */
 
-        modules.forEach(function (Immutable, version) {
+          context.currentSrc = context.contexts[index];
           sources.forEach(function (source) {
-            var description = [];
-            var beforeStack = [];
-            var beforeFn;
-            var prevBeforeFn;
-
-            function describe(name, fn) {
-              description.push(name);
-              beforeStack.push(prevBeforeFn);
-              prevBeforeFn = beforeFn;
-              fn();
-              beforeFn = prevBeforeFn;
-              prevBeforeFn = beforeStack.pop();
-              description.pop();
-            }
-
-            function beforeEach(fn) {
-              beforeFn = !prevBeforeFn
-                ? fn
-                : (function (prevBeforeFn) {
-                    return function () {
-                      prevBeforeFn();
-                      fn();
-                    };
-                  })(prevBeforeFn);
-            }
-
-            function it(name, test) {
-              var fullName = description.join(' > ') + ' ' + name;
-              (
-                tests[fullName] ||
-                (tests[fullName] = {
-                  description: fullName,
-                  tests: [],
-                })
-              ).tests[version] = {
-                before: beforeFn,
-                test: test,
-              };
-            }
-
-            vm.runInNewContext(
-              source.source,
-              {
-                describe: describe,
-                it: it,
-                beforeEach: beforeEach,
-                console: console,
-                Immutable: Immutable,
-              },
-              source.path
-            );
+            const testCode = new Function(source.source.toString('utf-8'));
+            testCode();
           });
         });
+
+        context.currentSrc = undefined;
 
         // Array<{
         //   description: String,
@@ -140,15 +139,14 @@ Promise.all([
         //     test: Function
         //   }> // one per module, [new,old] or just [new]
         // }>
-        return Object.keys(tests).map(function (key) {
-          return tests[key];
-        });
+        return Object.keys(context.suites).map((key) => context.suites[key]);
       });
   })
   .then(function (tests) {
     var suites = [];
 
     tests.forEach(function (test) {
+      // Benchmark.options.maxTime = 20;
       var suite = new Benchmark.Suite(test.description, {
         onStart: function (event) {
           console.log(event.currentTarget.name.bold);

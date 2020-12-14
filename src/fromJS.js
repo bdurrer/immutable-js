@@ -8,6 +8,8 @@
 import { KeyedSeq, IndexedSeq } from './Seq';
 import { isKeyed } from './predicates/isKeyed';
 import isPlainObj from './utils/isPlainObj';
+import { isImmutable } from './predicates/isImmutable';
+
 
 export function fromJS(value, converter) {
   return fromJSWith(
@@ -21,6 +23,9 @@ export function fromJS(value, converter) {
 }
 
 function fromJSWith(stack, converter, value, key, keyPath, parentValue) {
+  if (isImmutable(value)) {
+    return value;
+  }
   const toSeq = Array.isArray(value)
     ? IndexedSeq
     : isPlainObj(value)

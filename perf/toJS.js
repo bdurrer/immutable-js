@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-describe('toJS', () => {
+describe('toJS', (Immutable) => {
   const array32 = [];
   for (let ii = 0; ii < 32; ii++) {
     array32[ii] = ii;

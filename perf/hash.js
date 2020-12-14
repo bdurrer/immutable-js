@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-describe('hash', () => {
+describe('hash', (Immutable) => {
   const aString = 'test';
   it('a string', () => {
     Immutable.hash(aString);

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-describe('Set', () => {
+describe('Set', (Immutable) => {
   describe('maps with changes', () => {
     const array2 = [];
     for (let i = 0; i < 2; i++) {
